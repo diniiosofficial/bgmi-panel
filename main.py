@@ -1,14 +1,18 @@
+from flask import Flask, request, jsonify
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-import random, string, json
-from datetime import datetime, timedelta
 from telegram.helpers import escape_markdown
+from datetime import datetime, timedelta
+import random, string, json, os, threading, asyncio
 
+# === CONFIG ===
 TOKEN = "8003623743:AAFjM0XKAM3y7Yhq606XfDZlSB4HkS1dwp8"
 ADMIN_ID = 5707956654 
 KEY_FILE = "keys.json"
 USER_FILE = "users.json"
+PORT = int(os.environ.get("PORT", 10000))
 
+# === UTILITIES ===
 def load_keys():
     with open(KEY_FILE, "r") as f:
         return json.load(f)
@@ -45,6 +49,7 @@ def get_expiry(duration):
     delta = timedelta(hours=num) if unit == 'h' else timedelta(days=num)
     return (now + delta).strftime("%Y-%m-%d %H:%M:%S")
 
+# === TELEGRAM COMMANDS ===
 async def gen(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     if not is_authorized(uid):
@@ -132,11 +137,45 @@ async def users_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply = "\n".join([f"👤 {uid} — Expires: {exp}" for uid, exp in users.items()])
     await update.message.reply_text(reply)
 
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(CommandHandler("gen", gen))
-app.add_handler(CommandHandler("keys", keys_cmd))
-app.add_handler(CommandHandler("delkey", delkey))
-app.add_handler(CommandHandler("add", add_user))
-app.add_handler(CommandHandler("users", users_cmd))
+# === FLASK BACKEND ===
+flask_app = Flask(__name__)
 
-app.run_polling()
+@flask_app.route("/connect", methods=["POST"])
+def connect():
+    data = request.json
+    provided_key = data.get("key")
+
+    keys = load_keys()
+    key_data = next((k for k in keys if k["key"] == provided_key), None)
+    
+    if not key_data:
+        return jsonify({"error": "Invalid key"}), 403
+
+    if datetime.strptime(key_data["expires_at"], "%Y-%m-%d %H:%M:%S") < datetime.now():
+        return jsonify({"error": "Key expired"}), 403
+
+    token = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+    rng = random.randint(100000, 999999)
+    exp = key_data["expires_at"]
+
+    return jsonify({
+        "token": token,
+        "rng": rng,
+        "exp": exp
+    })
+
+def run_flask():
+    flask_app.run(host="0.0.0.0", port=PORT)
+
+# === COMBINED START ===
+if __name__ == "__main__":
+    threading.Thread(target=run_flask).start()  # Start Flask in a new thread
+
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("gen", gen))
+    app.add_handler(CommandHandler("keys", keys_cmd))
+    app.add_handler(CommandHandler("delkey", delkey))
+    app.add_handler(CommandHandler("add", add_user))
+    app.add_handler(CommandHandler("users", users_cmd))
+
+    asyncio.run(app.run_polling())  # Run Telegram bot
