@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import random, string, json, os, threading, asyncio
 
 # === CONFIG ===
-TOKEN = "8003623743:AAFjM0XKAM3y7Yhq606XfDZlSB4HkS1dwp8"
+TOKEN = "8003623743:AAEVTC720wTTVOzNsUNEachXgkb3hQ19GSc"
 ADMIN_ID = 5707956654 
 KEY_FILE = "keys.json"
 USER_FILE = "users.json"
