@@ -1,0 +1,1 @@
+web: python connect_api.py & python main.py
