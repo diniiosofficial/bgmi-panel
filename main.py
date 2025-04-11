@@ -4,7 +4,7 @@ import random, string, json
 from datetime import datetime, timedelta
 from telegram.helpers import escape_markdown
 
-TOKEN = "8003623743:AAF4OtuwPiNUE1883P8b9aMqz12Lt8pnNOY"
+TOKEN = "8003623743:AAFjM0XKAM3y7Yhq606XfDZlSB4HkS1dwp8"
 ADMIN_ID = 5707956654 
 KEY_FILE = "keys.json"
 USER_FILE = "users.json"
