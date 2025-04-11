@@ -21,7 +21,7 @@ def load_keys():
 
 # Telegram alert
 def send_telegram_alert(msg):
-    token = "8003623743:AAF4OtuwPiNUE1883P8b9aMqz12Lt8pnNOY"
+    token = "8003623743:AAFjM0XKAM3y7Yhq606XfDZlSB4HkS1dwp8"
     chat_id = "5707956654"
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     data = {
